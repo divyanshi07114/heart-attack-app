@@ -22,7 +22,7 @@ EXPECTED_COLS = ['age', 'trestbps', 'chol', 'thalach', 'exang', 'oldpeak', 'slop
                  'sex_1', 'cp_1', 'cp_2', 'cp_3', 'fbs_1', 'restecg_1', 'restecg_2']
 
 # Only the numerical columns were scaled during our training process
-NUM_COLS = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak']
+NUM_COLS = ['age', 'chol', 'oldpeak']
 
 @app.route('/', methods=['GET'])
 def home():
