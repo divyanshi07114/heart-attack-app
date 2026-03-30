@@ -21,7 +21,7 @@ with open(scaler_path, 'rb') as f:
 EXPECTED_COLS = ['age', 'trestbps', 'chol', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal', 
                  'sex_1', 'cp_1', 'cp_2', 'cp_3', 'fbs_1', 'restecg_1', 'restecg_2']
 
-# Only the numerical columns were scaled during our training process
+# Only the numerical columns that were actually scaled during our training process
 NUM_COLS = ['age', 'chol', 'oldpeak']
 
 @app.route('/', methods=['GET'])
@@ -76,17 +76,27 @@ def predict():
             input_df[NUM_COLS] = scaler.transform(input_df[NUM_COLS])
 
             # 4. Predict
-            prediction = model.predict(input_df)[0]
+            if hasattr(model, 'predict_proba'):
+                prob = model.predict_proba(input_df)[0][1]
+            else:
+                # Fallback if the model doesn't support predict_proba
+                pred = model.predict(input_df)[0]
+                prob = 0.9 if pred == 1 else 0.1
+                
+            risk_percent = prob * 100
             
             # 5. Format Output safely using the user's required wording
-            if prediction == 1:
-                result_text = "⚠️ High Risk of Heart Attack detected. Please consult a doctor."
+            if prob >= 0.70:
+                result_text = f"🔴 High Risk of Heart Attack detected ({risk_percent:.1f}%). Please consult a doctor immediately."
                 result_class = "danger"
+            elif prob >= 0.40:
+                result_text = f"🟡 Medium Risk of Heart Attack detected ({risk_percent:.1f}%). Consider scheduling a health check-up."
+                result_class = "warning"
             else:
-                result_text = "✅ Low Risk of Heart Attack. Maintain a healthy lifestyle."
+                result_text = f"🟢 Low Risk of Heart Attack ({risk_percent:.1f}%). Maintain a healthy lifestyle."
                 result_class = "success"
 
-            explanation = "This prediction is based on the data you entered and a machine learning model."
+            explanation = "This subjective prediction is based on the specific health indicators you entered and is evaluated by our machine learning model."
 
             return render_template('index.html', result_text=result_text, result_class=result_class, explanation=explanation)
 
